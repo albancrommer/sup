@@ -1,0 +1,58 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title>Stupid User Profiler</title>
+
+  <link rel="stylesheet" type="text/css" href="sup.css">
+  <script type="text/javascript" src="../src/sup.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+
+
+</head>
+
+
+<body>
+    
+  <script type="text/javascript">
+      window.request ={
+          "version":"0",
+          "agents":{
+              "watch":{
+                  "positions":{}
+              }
+          }
+      }
+      Sup.configure({
+          "read":function(){return window.request},
+          "write":function(data){window.request = JSON.stringify(data)},
+          "strategy":function(request){
+              return Sup.Agents._list;
+          },
+          "agents":{
+              "watch":function(){
+                  var _this = this;
+                  $(window.document).mousemove(function(e){
+                      var last = _this.last || 0; 
+                      var cur = new Date().getTime(); 
+                      if( cur-last > 400){
+                          var x = parseInt( e.clientX/10 )*30;
+                          var y = parseInt( e.clientY/10 )*30;
+                          var key = x+":"+y;
+                          if( undefined == _this.positions[key] ){
+                              _this.positions[key] = 1;
+                          }else{
+                              _this.positions[key] += 1;
+                          }
+                          _this.update(true)
+                          _this.last = cur;
+                      }
+                  });
+              }
+          }
+          
+      }).run();
+  </script>
+</body>
+</html>
