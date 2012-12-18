@@ -16,14 +16,7 @@
 <body>
     
   <script type="text/javascript">
-      window.request ={
-          "version":"0",
-          "agents":{
-              "watch":{
-                  "positions":{}
-              }
-          }
-      }
+      window.request ="{\"version\":\"0\",\"agents\":{\"watch\":{\"positions\":{}}}}"
       Sup.configure({
           "read":function(){return window.request},
           "write":function(data){window.request = JSON.stringify(data)},
