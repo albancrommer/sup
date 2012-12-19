@@ -5,47 +5,152 @@
 <head>
   <title>Stupid User Profiler</title>
 
-  <link rel="stylesheet" type="text/css" href="sup.css">
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css">
   <script type="text/javascript" src="../src/sup.js"></script>
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
 
 
 </head>
-
+<style>
+    .widget{
+        background: #f8f8f8;
+        border:1px solid #fff;
+        border-radius:10px;
+        box-shadow: 0 0 5px gray;
+        padding:5px;
+        position:absolute;
+        top:10px;
+        right:10px;
+        width:350px;
+        z-index:9;
+    }
+    .controls{
+        border-top:1px solid #ccc;
+        padding:5px 0 0;
+        text-align:center;
+    }
+    #tracker{
+        background: black;
+        color: #00FF00;
+        max-height:400px;
+        font-size: 8pt;
+        overflow-y: auto;
+        width:150px;
+        
+    }
+</style>
 
 <body>
+    <div id="tracker" style="display:none;"><pre></pre><div>
     
   <script type="text/javascript">
-      window.request ="{\"version\":\"0\",\"agents\":{\"watch\":{\"positions\":{}}}}"
+      $(function(){
+      
+      window.request ="{\"version\":\"0\",\"agents\":{}}";
+      window.tutorialSlides = {
+          1:"<h2>Welcome to Sup </h2><p>This very widget is a Sup \"agent\", providing interactions and assistance as well as eventually spying on you :).</p><p>Is it the only one in this demo?</p><p> Discover it and much more about Sup by clicking on the Next button.</p>",
+          2:"<h2>Why should I use Sup?</h2><p>Sup was made to ease the learning curve and provide a long-term adaptation to users of a web app.</p><p> It should adapt to fit their needs.</p><p>First, help them. </p><p>And then model the application around them through activity profiling, for example by modifying the UI.</p>",
+          3:"<h2>Tutoring</h2><p>Sup can quickly do a great job at helping fresh users, typically by setting up a run-once tutorial like this one and then displaying some contextual helpers once per app area, typically a controller for an MVC application.</p><p>A news agent could also print totally cool and disruptive info flashs. Out there, there are a lot of CEOs sweating at the thought.</p>",
+          4:"<h2>Tracking</h2><p>By now, you maybe noticed red squares following on screen your mouse wanderings.</p><p><a id=\"tracker-show\" href=javascript:void(0)>Reveal the tracker</a> and keep moving the pointer outside of this box, its activity is recorded in a \"heat-map\" way.</p><p>Sup silently updates a JSON object you can attach to an user account to track what he does. </p><p>This demo does not record any data out of your browser, but branching a database would be a no brainer.</p><p>Privacy concerns? It's all up to you. Keeping your users informed and providing a Sup Kill Switch is a good idea.</p>",
+          5:"<h2>No dependencies, no structure.</h2><p>For the sake of simplicity, this demo uses jQuery. But whatever you're using already will work to code agents and the strategy used to select which ones to dispatch.</p><p>Also, being JSON based means Sup doesn't depend on any specific storage. Working with PHP/MySQL? That's OK.</p><p>Later on, if you add or remove agents, Sup will keep working.</p>",
+          6:"<h2>Running Sup</h2><p>Sup is built through a configuration object so setting it up means mostly understanding how that part works.</p><p> Then you'll have to write a few functions, one who will decide which agents and the others to define your agents by themselves.</p>",
+          7:"<h2>Ready? Go!</h2><p>The installation tutorial will guide you through a 5 minutes install.<p></p>In doubt? Check the API, or {insert forum / IRC / Twitter}.</p>",
+          8:"<h2>Congratulations.</h2><p>You've finished this tutorial. You can click on the Close button. See ya :D</p>",
+          9:"<h2>Ah! Gotcha!</h2><p>If you're still reading this, you're terribly bored or you found some interest to the system. Either way, you can close now. Really ;)</p>",
+          10:"<h2>Seriously?</h2><p>You see, it's funny how this very /Tutorial/ thingy implements what we wanted to do with the idea of Sup in the first place. Help in computing has always been pretty bad in our experience (man and Windows help, I'm thinking at you), whatever your level. And if succeeding to help users does not make success, we believe it helps greatly.</p><p>Game Designers and Coders on the other hand came with more immersive technics, like the <a href=\"http://tvtropes.org/pmwiki/pmwiki.php/Main/GreenHillZone\" target=\"_blank\">first level</a> of so many games that make the learning curve more friendly, amongst other cool technics.</p><p>And much like games, we believe we should try to make things a bit more fun and immersive</p>",
+          11:"<h2>Gaming matters</h2><p>So, games are a source of inspiration and they will help you on the 'Sup Way.</p><p>The concept of User Profiling also comes from games designers, specifically on the AI side.</p><p>Speaking about AI, there's none in the bare structure of Sup, because we decided to leave it all up to you, for no algorithm will work with everyone's design.</p><p>In some cases you'll want to be very specific on the actions dispatched, in others you'll want to always dispatch all agents, sometimes you'll want a mix of both, or integrate parameters that allow disabling some agents and not others.</p>",
+          12:"<h2>Debugging is never cheap</h2><p>Another feature coming from games AI is the Sup.debug() method which originates in the dire need for Game AI coders to have a way to understand what's happening at any time of the game as things can go  awry very fast. </p><p>What it does is to call recursively each of its sub-object debug() method, each providing (or not) informations required to understand the current behaviour.</p>",
+          13:"<h2>Okay</h2><p>Now is the real end of the slides, have fun. Peace.</p>"
+      }
       Sup.configure({
-          "read":function(){return window.request},
-          "write":function(data){window.request = JSON.stringify(data)},
-          "strategy":function(request){
-              return Sup.Agents._list;
-          },
-          "agents":{
-              "watch":function(){
-                  var _this = this;
-                  $(window.document).mousemove(function(e){
-                      var last = _this.last || 0; 
-                      var cur = new Date().getTime(); 
-                      if( cur-last > 400){
-                          var x = parseInt( e.clientX/10 )*30;
-                          var y = parseInt( e.clientY/10 )*30;
-                          var key = x+":"+y;
-                          if( undefined == _this.positions[key] ){
-                              _this.positions[key] = 1;
-                          }else{
-                              _this.positions[key] += 1;
-                          }
-                          _this.update(true)
-                          _this.last = cur;
-                      }
-                  });
+        "read":function(){return window.request},
+        "write":function(data){window.request = JSON.stringify(data)},
+        "strategy":function(request){
+            var i,list=[];
+            for (i in Sup.Agents._list){
+                list.push(i);
+            }
+            return list;
+        },
+        "ball":{
+
+        },
+        "agents":{
+            "watch":function(){
+                var x,y = "";
+                this.positions = this.positions || {};
+                var _this = this;
+                this.updateTracker = function(){
+                    var content = "";
+                    for( key in this.positions){
+                        content += key+" = "+this.positions[key]+"\n";
+                    }
+                    $("#tracker pre").html(content);
+                }
+                $(window.document).mousemove(function(e){
+                    var last = _this.last || 0; 
+                    var cur = new Date().getTime(); 
+                    if( cur-last > 100){
+                        var x = parseInt( e.clientX/30 )*30;
+                        var y = parseInt( e.clientY/30 )*30;
+                        console.log(e.clientX,e.clientY, x,y)
+                        var key = x+":"+y;
+                        $("body").append($('<div style="background:rgba(255,0,0,0.03);width:30px;height:30px;position:absolute;top:'+y+'px;left:'+x+'px;">&nbsp;</div'));
+                        if( undefined == _this.positions[key] ){
+                            _this.positions[key] = 1;
+                        }else{
+                            _this.positions[key] += 1;
+                        }
+                        _this.update(true)
+                        _this.updateTracker()
+                        _this.last = cur;
+                    }
+                });
+            },
+            "tutorial":function () {
+                var data = "",
+                _this = this, 
+                // instanciates widget
+                widget = $('<div id="tutorial" class="widget"><div class="content"></div><div class="controls"><button name="next">Next</button><button name="close">Close</button></div></div>');
+                $("body").append(widget);
+                // reads current slides id and loads data
+                this.id = this.id || 0;
+                var _this = this;
+                this.getNextSlide = function () {
+                    this.id += 1;
+                    var content = window.tutorialSlides[this.id];
+                    if( undefined === content ){
+                        return false;
+                    }
+                    $("#tutorial .content").html(content);
+                    $('#tutorial').position({
+                        my: "center",
+                        at: "center",
+                        of: window
+                    });
+                    return true;
+                };
+                this.getNextSlide();
+                // hooks read next slide to button next
+                // or destructs self if depleted
+                $("#tutorial button[name=next]").on("click",function(e){
+                    if (!_this.getNextSlide()) {
+                        $("#tutorial").remove();
+                    }
+                });
+                $("#tutorial button[name=close]").on("click",function(e){
+                    $("#tutorial").remove();
+                });
+                $("#tracker-show").live("click",function(e){
+                    $("#tracker").show();
+                });
               }
           }
           
       }).run();
+    })
+
   </script>
 </body>
 </html>

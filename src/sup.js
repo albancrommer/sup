@@ -1,5 +1,6 @@
 (function (window, undefined) {
     "use strict";
+    var Sup;
     /**
     * The hopefully easy to setup, run everywhere user profiler.
     * 
@@ -22,25 +23,28 @@
     *  
     * @class the Simple User Profiler. Because users need help. 
     */
-    var Sup =  {};
+    Sup = {};
 
     /** 
      * This is the principal method you'll use : it sets things up while keeping the internals away 
      * @param params your configuration object 
+     * @param params.read A function you define to concretely access the user data/request object
+     * @param params.write A function you define to store said data object
+     * @param params.strategy A function you define to decide which agents to dispatch depending on context
+     * @param params.agents A key:value list of functions or objects you define to declare your agents
      * @return self for fluent interface Sup.configure(...).run()
      **/
     Sup.configure = function (params) {
         Sup.Controller.read = params.read || function () {};
         Sup.Controller.write = params.write || function () {};
-        if ( params["strategy"] ){ 
+        if (params["strategy"]) { 
             Sup.Strategy._fn = params["strategy"];
         }
-        if ( params["agents"] ){ 
+        if (params["agents"]) { 
             Sup.Agents._list = params["agents"];
         }
         return Sup;
     };
-    
     /** Once configured, let Sup run.
      **/
     Sup.run = function () {
@@ -48,72 +52,70 @@
         Sup.Dispatcher._list = Sup.Strategy.run();
         Sup.Dispatcher.run();
     };
-        
     /** When in doubt, use this method to have Sup return it's own debugging info
      * @usage in console : Sup.debug()
      **/
     Sup.debug = function () {
-        for(var i in Sup){
-            if ( typeof( Sup[i] ) == "object"){
+        var i;
+        for (i in Sup) {
+            if (typeof (Sup[i]) === "object") {
                 Sup[i]._debug();
             }
-        }    
-    }
+        }
+    };
     
 
     // Agents
-   
-   Sup.Agents = { /** @lends Sup.Agents.prototype */
+    Sup.Agents = { /** @lends Sup.Agents.prototype */
             /** 
             * The Agents object acts as a pool of potential objects you configure
             * @class Objects pool
             * @name Sup.Agents 
             **/
-        };
-    Sup.Agents._debug = function(){}
-    
+    };
+    Sup.Agents._debug = function () {};
+
     /**
     * Provides a standard interface for all your agents
     * @class Abstract 
     */
-    Sup.Agents.Abstract = function(name){ /** @lends Sup.Agents.Abstract.prototype */
-        
+    Sup.Agents.Abstract = function (name) { /** @lends Sup.Agents.Abstract.prototype */
         // The name of your action
         this._name = name || "unknown";
 
         /** Reads the request to set all properties on your agent */
-        this.init = function(){
-            var request = Sup.Controller.request();
-            if ( undefined != request["agents"][this._name]){
-                for( var i in request["agents"][this._name] ){
-                    this[i] = request["agents"][this._name][i]
+        this.init = function () {
+            var i, request = Sup.Controller.request();
+            if (undefined !== request.agents[this._name]) {
+                for (i in request.agents[this._name]) {
+                    this[i] = request.agents[this._name][i];
                 }
             }
-        }
+        };
+        
         /** Serializes your agent properties and pushes it to controller subscribing a save agent */ 
-        this.update = function(do_save){
-            var serializable = {};
-            for( var i in this){
-    //            if ( typeof( this [i] ) == "function" ){
-    //                continue;
-    //            }
-                if ( typeof( i ) == "string" ){
-                    if ( i[0] == "_"){
+        this.update = function (do_save) {
+            var i,serializable = {};
+            for (i in this) {
+                if ("function" === typeof (this[i])) {
+                    continue;
+                }
+                if ("string" === typeof (i)) {
+                    if ("_" === i[0]) {
                         continue;
                     }
                 }
                 serializable[i] = this [i];
             }
             Sup.Controller.requestPart(this._name,serializable);
-            if ( do_save ){
+            if (do_save) {
                 Sup.Controller.save();
             }
-        }
-    }
+        };
+    };
 
 
     // Strategy
-        
     Sup.Strategy = {
             /** 
             * Strategy offers you a way to deal freely with the logic
@@ -123,47 +125,59 @@
             * @class Strategy / Algorithmic decisional
             * @name Sup.Strategy 
             **/
-        };
-        
+    };
     /** Method you configure that implements dispatcher "AI" */
-    Sup.Strategy._fn = function(){}
-    
+    Sup.Strategy._fn = function () {};
     /** AI function executer, performs a selection of agents */
-    Sup.Strategy.run = function(){
+    Sup.Strategy.run = function () {
         return this._fn(Sup.Controller.request());
-    }
-    
-    Sup.Strategy._debug = function(){}
+    };
+    Sup.Strategy._debug = function () {};
 
     // Dispatcher
 
-   Sup.Dispatcher = { /** @lends Sup.Dispatcher.prototype */
+    Sup.Dispatcher = { /** @lends Sup.Dispatcher.prototype */
             /** 
             * Dispatcher is a mechanical part as it receives a list generated 
             * by {@link Sup.Strategy} to instance the {@link Sup.Agents}
             * @class Multi agents handler / Factory  
             * @name Sup.Dispatcher 
             **/
-        };
+    };
     /** Factories your Agents and records them */
-    Sup.Dispatcher.run = function(){
+    Sup.Dispatcher.run = function () {
+        var i,ii,agent,key,value;
         this._dispatched = {};
-        for( var i in this._list ){
-            if ( "function" == typeof( this._list[i] ) ){
-               var agent = new Sup.Agents.Abstract(i);
-               agent.init(Sup.Controller.request())
-               agent.run = this._list[i]
-               agent.run()
-               this._dispatched[i] = agent;
+        for (i in this._list) {
+            key = this._list[i];
+            value = Sup.Agents._list[key];
+            if( undefined === value){
+                throw("Invalid object key");
             }
+            agent = new Sup.Agents.Abstract(key);
+            agent.init(Sup.Controller.request());
+            // Single function : is the run method
+            if ("function" === typeof (value)) {
+                agent.run = Sup.Agents._list[this._list[i]];
+            }
+            // Object : contains multiple methods
+            if ("object" === typeof (configured)) {
+                for( ii in value){
+                    agent[ii] = Sup.Agents._list[this._list[i]][ii];
+                }
+            }
+            if( "function" !== typeof( agent.run) ){
+                throw "Agent "+this._list[i]+" missing run function.";
+            }
+            agent.init();
+            agent.run();
+            this._dispatched[this._list[i]] = agent;
         }
-    }
+    };
 
-    Sup.Dispatcher._debug = function(){}
-
+    Sup.Dispatcher._debug = function () {};
 
     // Controller 
-    
     Sup.Controller = { /** @lends Sup.Controller.prototype */
             /** 
             * Contains the request object, loads and saves it for you. The 
@@ -172,57 +186,50 @@
             * 
             * @name Sup.Controller 
             **/
-            "_request" : {},
-            
-            /** User rewritable function */
-            "write" : function(){}
-        };
-        
+            "_request" : {}
+    };
 
     /** Loads your user data, parses it and sets it as the request */
-    Sup.Controller.load = function(){
-        Sup.Controller._request = JSON.parse( Sup.Controller.read() );
-        if ( undefined == this._request["agents"]){
-            this._request["agents"] = {};
+    Sup.Controller.load = function () {
+        Sup.Controller._request = JSON.parse(Sup.Controller.read());
+        if (undefined === this._request.agents) {
+            this._request.agents = {};
         }
-    }
-    
+    };
     /** User rewritten function */
-    Sup.Controller.read = function(){}
-            
+    Sup.Controller.read = function () {};
     /** User rewritten function */
-    Sup.Controller.write = function(){}
-            
+    Sup.Controller.write = function () {};
     /** Encodes the request and puts it where you asked it to */
-    Sup.Controller.save = function(){
-        Sup.Controller.write( Sup.Controller.request() );
-    }
-    
+    Sup.Controller.save = function () {
+        Sup.Controller.write(Sup.Controller.request());
+    };
     /** Your basic getter for the request object */
-    Sup.Controller.request = function(){
+    Sup.Controller.request = function () {
         return Sup.Controller._request;
     };
-    
     /** Acts as a getter setter for agents parts of the request */
-    Sup.Controller.requestPart = function(part,content){
+    Sup.Controller.requestPart = function (part, content) {
         // getter
-        if ( undefined == content){
-            return this._request["agents"][part];
+        if (undefined === content) {
+            return this._request.agents[part];
         }
         // setter
-        this._request["agents"][part] = content;
-    }
+        this._request.agents[part] = content;
+        return true;
+    };
 
-    Sup.Controller._debug = function(){
-        if ( "function" != typeof( console.log )){
+    Sup.Controller._debug = function () {
+        var i, ii;
+        if ("function" !== typeof (console.log)) {
             alert("No console available.");
         }
         console.log("request",this._request);
-        for( var i in this._request.agents){
-            console.log( "  request agent: "+i);
-            for( var ii in this._request.agents[i]){
-                if ( "function" != typeof( this._request.agents[i][ii] ) ){
-                    console.log( "    "+ii+" ",this._request.agents[i][ii]);
+        for (i in this._request.agents) {
+            console.log("  request agent: "+i);
+            for (ii in this._request.agents[i]) {
+                if ("function" !== typeof (this._request.agents[i][ii])) {
+                    console.log("    "+ii+" ",this._request.agents[i][ii]);
                 }
             }
         }
@@ -231,4 +238,4 @@
 
   window.Sup = Sup;
 
-})( window );
+})(window);
