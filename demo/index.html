@@ -4,8 +4,9 @@
 <html>
 <head>
   <title>Stupid User Profiler</title>
-
+  <meta charset="utf-8">
   <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="./bootstrap/css/bootstrap.min.css">
   <script type="text/javascript" src="../src/sup.js"></script>
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
   <script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
@@ -39,21 +40,113 @@
         width:150px;
         
     }
+    
+    #pseudoapp{
+        background:white;
+        background: rgba(255,255,255,0.9);
+        position:absolute;
+        top:0px;
+        left:0px;
+        width:100%;
+        min-height:300px;
+        z-index: 2;
+    }
+    
+    #pseudoapp .menu, #pseudoapp .container {
+        margin: 10px auto;
+        text-align: center;
+        width: 600px;
+    }
+    
+    #pseudoapp .menu ul{
+        margin: 0px;
+        padding: 0px;
+    }
+    
+    #pseudoapp .menu li {
+        border-right: 1px solid #CCCCCC;
+        display: inline;
+        padding: 5px 20px;
+    }
+    
+    #pseudoapp .menu li:last-of-type{
+        border-right: none;
+    }
+    
+    #pseudoapp .widget{
+        
+    }
+    
+    #advanced.widget{
+        left:10px;
+    }
 </style>
 
 <body>
-    <div id="tracker" style="display:none;"><pre></pre><div>
-    
-  <script type="text/javascript">
-      $(function(){
-      
-      window.request ="{\"version\":\"0\",\"agents\":{}}";
-      window.tutorialSlides = {
-          1:"<h2>Welcome to Sup </h2><p>This very widget is a Sup \"agent\", providing interactions and assistance as well as eventually spying on you :).</p><p>Is it the only one in this demo?</p><p> Discover it and much more about Sup by clicking on the Next button.</p>",
-          2:"<h2>Why should I use Sup?</h2><p>Sup was made to ease the learning curve and provide a long-term adaptation to users of a web app.</p><p> It should adapt to fit their needs.</p><p>First, help them. </p><p>And then model the application around them through activity profiling, for example by modifying the UI.</p>",
+<div id="tracker" style="display:none;">
+    <pre>
+    </pre>
+</div>
+<div id="pseudoapp" style="display:none">
+    <div class="menu">
+        <ul>
+            <li>
+                <a href="" rel="users" title="Modify  users"><i class="icon-user"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="" rel="groups" title="Modify  groups"><i class="icon-cog"></i>
+                    <span>Groups</span>
+                </a>
+            </li>
+            <li>
+                <a href="" rel="files" title="Modify  files"><i class="icon-file"></i>
+                    <span>Files</span>
+                </a>
+            </li>
+            <li>
+                <a href="" rel="services" title="Modify  services"><i class="icon-off"></i>
+                    <span>Services</span>
+                </a>
+            </li>
+            <li>
+                <a href="" rel="messages" title="Modify  messages"><i class="icon-envelope"></i>
+                    <span>Messages</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="container"><h1>Welcome to the Fake© Application</h1><p>As you dismissed the Tutorial agent, Sup refreshed itself and a new agent popped in the list : the always appreciated Contextual agent.</p>
+                            <p>This agent is contextual in the sense that it will display a widget in application areas the user never dealt with before.</p>
+                            <p>After displaying the contextual help for -say- a whole controller of your MVC application, it stores that information and it won't be displayed again.</p>
+                            </div>
+    <div class="widget" style="display:none"><div class="content"></div><div class="controls"><button name="close">Close</button></div></div>
+</div>
+        
+<script type="text/javascript">
+    $(function(){
+    window.pseudoapp = {
+        "users":"<h1>List of users</h1><p>Here be users</p>",
+        "groups":"<h1>List of groups</h1><p>Here be groups</p>",
+        "files":"<h1>List of files</h1><p>Here be files</p>",
+        "services":"<h1>List of services</h1><p>Here be services</p>",
+        "messages":"<h1>List of messages</h1><p>Here be messages</p>"
+    };
+    window.contextual = {
+        "users":"<h2>How to create users?</h2>",
+        "groups":"<h2>How to deal with groups.</h2>",
+        "files":"<h2>Are all files born equal?</h2>",
+        "services":"<h2>Distributing services to your users.</h2>",
+        "messages":"<h2>Did you know messages are great?</h2>"
+    };
+    window.request ="{\"version\":\"0\",\"agents\":{}}";
+    window.tutorialSlides = {
+          1:"<h2>Welcome to Sup </h2><p>Did you know this very widget is a Sup <strong>agent</strong>, providing interactions and assistance as well as eventually spying on you?</p><p>Do you know there are more to discover in this demo?</p><p> Yes? No? Whatever, click on the Next button.</p>",
+          2:"<h2>Why should I use Sup?</h2><p>Sup was made to ease the learning curve and provide a long-term adaptation to users of a web app.</p><p>A typical use would be to <strong>tutor</strong> users in the first place. </p><p>And then shape the application around their needs through <strong>tracking</strong>.</p>",
           3:"<h2>Tutoring</h2><p>Sup can quickly do a great job at helping fresh users, typically by setting up a run-once tutorial like this one and then displaying some contextual helpers once per app area, typically a controller for an MVC application.</p><p>A news agent could also print totally cool and disruptive info flashs. Out there, there are a lot of CEOs sweating at the thought.</p>",
-          4:"<h2>Tracking</h2><p>By now, you maybe noticed red squares following on screen your mouse wanderings.</p><p><a id=\"tracker-show\" href=javascript:void(0)>Reveal the tracker</a> and keep moving the pointer outside of this box, its activity is recorded in a \"heat-map\" way.</p><p>Sup silently updates a JSON object you can attach to an user account to track what he does. </p><p>This demo does not record any data out of your browser, but branching a database would be a no brainer.</p><p>Privacy concerns? It's all up to you. Keeping your users informed and providing a Sup Kill Switch is a good idea.</p>",
-          5:"<h2>No dependencies, no structure.</h2><p>For the sake of simplicity, this demo uses jQuery. But whatever you're using already will work to code agents and the strategy used to select which ones to dispatch.</p><p>Also, being JSON based means Sup doesn't depend on any specific storage. Working with PHP/MySQL? That's OK.</p><p>Later on, if you add or remove agents, Sup will keep working.</p>",
+          4:"<h2>Tracking</h2><p>By now, we should tell you that your mouse moves so far have been recorded.</p><p><a id=\"tracker-show\" href=javascript:void(0)>Reveal the tracker</a> and keep moving the pointer.</p><p>Sup silently updates a JSON object you can attach to an user account to track what he does. </p><p>This demo does not record any data out of your browser, but branching a database would be a no brainer.</p><p>Privacy concerns? It's all up to you. Keeping your users informed and providing a Sup Kill Switch is a good idea.</p>",
+          5:"<h2>No dependencies, no structure.</h2><p>For the sake of simplicity, this demo uses jQuery. But whatever you're using already will work to code agents and the strategy used to select which ones to dispatch.</p><p>The single library you might require is one implementing JSON parsing for old browsers who don't come with it.</p>   <p>Also, being JSON based means Sup doesn't depend on any specific storage. Working with PHP/MySQL? That's OK.</p><p>Later on, if you add or remove agents, Sup will keep working.</p>",
           6:"<h2>Running Sup</h2><p>Sup is built through a configuration object so setting it up means mostly understanding how that part works.</p><p> Then you'll have to write a few functions, one who will decide which agents and the others to define your agents by themselves.</p>",
           7:"<h2>Ready? Go!</h2><p>The installation tutorial will guide you through a 5 minutes install.<p></p>In doubt? Check the API, or {insert forum / IRC / Twitter}.</p>",
           8:"<h2>Congratulations.</h2><p>You've finished this tutorial. You can click on the Close button. See ya :D</p>",
@@ -62,19 +155,38 @@
           11:"<h2>Gaming matters</h2><p>So, games are a source of inspiration and they will help you on the 'Sup Way.</p><p>The concept of User Profiling also comes from games designers, specifically on the AI side.</p><p>Speaking about AI, there's none in the bare structure of Sup, because we decided to leave it all up to you, for no algorithm will work with everyone's design.</p><p>In some cases you'll want to be very specific on the actions dispatched, in others you'll want to always dispatch all agents, sometimes you'll want a mix of both, or integrate parameters that allow disabling some agents and not others.</p>",
           12:"<h2>Debugging is never cheap</h2><p>Another feature coming from games AI is the Sup.debug() method which originates in the dire need for Game AI coders to have a way to understand what's happening at any time of the game as things can go  awry very fast. </p><p>What it does is to call recursively each of its sub-object debug() method, each providing (or not) informations required to understand the current behaviour.</p>",
           13:"<h2>Okay</h2><p>Now is the real end of the slides, have fun. Peace.</p>"
-      }
-      Sup.configure({
+    }
+    Sup.configure({
         "read":function(){return window.request},
         "write":function(data){window.request = JSON.stringify(data)},
+        "save":2000,
         "strategy":function(request){
             var i,list=[];
             for (i in Sup.Agents._list){
-                list.push(i);
+                switch(i){
+                    case "tutorial":
+                        if(!("tutorial" in request.agents)){
+                            list.push(i);
+                        }else if( "object" === typeof(request.agents.tutorial) && !("done" in request.agents.tutorial)){
+                            list.push(i);
+                        }
+                        break;
+                    case "contextual":
+                        if( "tutorial" in request.agents && "object" === typeof(request.agents.tutorial) && "done" in request.agents.tutorial){
+                            list.push(i);
+                        }
+                        break;
+                    case "advanced":
+                        if("contextual" in request.agents && "object" === typeof(request.agents.contextual) && "advanced" in request.agents.contextual){
+                            list.push(i);
+                        }
+                        break;
+                    default:
+                        list.push(i);
+                        break;
+                }
             }
             return list;
-        },
-        "ball":{
-
         },
         "agents":{
             "watch":function(){
@@ -94,16 +206,14 @@
                     if( cur-last > 100){
                         var x = parseInt( e.clientX/30 )*30;
                         var y = parseInt( e.clientY/30 )*30;
-                        console.log(e.clientX,e.clientY, x,y)
                         var key = x+":"+y;
-                        $("body").append($('<div style="background:rgba(255,0,0,0.03);width:30px;height:30px;position:absolute;top:'+y+'px;left:'+x+'px;">&nbsp;</div'));
                         if( undefined == _this.positions[key] ){
                             _this.positions[key] = 1;
                         }else{
                             _this.positions[key] += 1;
                         }
-                        _this.update(true)
-                        _this.updateTracker()
+                        _this.update();
+                        _this.updateTracker();
                         _this.last = cur;
                     }
                 });
@@ -114,6 +224,12 @@
                 // instanciates widget
                 widget = $('<div id="tutorial" class="widget"><div class="content"></div><div class="controls"><button name="next">Next</button><button name="close">Close</button></div></div>');
                 $("body").append(widget);
+                this.end = function (){
+                    this.done = true;
+                    _this.update(true,true);
+                    $("#tutorial").remove();
+                    _this.destroy();
+                }
                 // reads current slides id and loads data
                 this.id = this.id || 0;
                 var _this = this;
@@ -123,30 +239,104 @@
                     if( undefined === content ){
                         return false;
                     }
+                    this.hookPreContent();
                     $("#tutorial .content").html(content);
+                    this.hookPostContent();
                     $('#tutorial').position({
                         my: "center",
                         at: "center",
                         of: window
                     });
+                    this.update();
                     return true;
                 };
+                this.hookPreContent = function(){
+                    var id = this.id;
+                    switch (id){
+                        case 4:
+                            $("#tracker").show();
+                            break;
+                        case 5:
+                            $("#tracker").hide();
+                            break;
+                        default:
+                        break;
+                    }  
+                };
+                this.hookPostContent = function(){};
                 this.getNextSlide();
                 // hooks read next slide to button next
                 // or destructs self if depleted
                 $("#tutorial button[name=next]").on("click",function(e){
                     if (!_this.getNextSlide()) {
-                        $("#tutorial").remove();
+                        _this.end();
                     }
                 });
                 $("#tutorial button[name=close]").on("click",function(e){
-                    $("#tutorial").remove();
+                    _this.end();
                 });
                 $("#tracker-show").live("click",function(e){
-                    $("#tracker").show();
+                    $("#tracker").toggle();
                 });
-              }
-          }
+            },
+            "contextual" : function () {
+                var _this = this;
+                this.list = this.list||[];
+                
+                // DOM SETUP
+                // Reveal the pseudoapp
+                $("#pseudoapp").show();
+
+                // UTILITIES 
+                // Data retrieval function
+                this.loadData = function (key){
+                    return window.contextual[key];
+                }
+                this.isKeyRecorded = function (key){
+                    // User.isAdvanced?
+                    if (this.list.length === 1){
+                        console.log(this)
+                        this.advanced = true;
+                        this.update(true,true);
+                        Sup.run();
+                    }
+                    var position = $.inArray(key,this.list);
+                    if (-1 === position){
+                        return false;
+                    }
+                    return true;
+                }
+                this.recordKey = function (key){
+                    this.list.push(key);
+                }
+                
+                // DOM HOOKS
+                $("#pseudoapp .menu a").live("click",function (e) {
+                    e.preventDefault();
+                    var key = $(this).attr("rel"), content = "";
+                    if( !_this.isKeyRecorded(key)){
+                        _this.recordKey(key);
+                        content = _this.loadData(key);
+                        $("#pseudoapp .widget .content").html(content);
+                        $("#pseudoapp .widget").show();
+                    }
+                    $("#pseudoapp .container").html(window.pseudoapp[key]);
+                })
+                $("#pseudoapp button[name=close]").on("click",function(e){
+                    $("#pseudoapp .widget").hide();
+                });
+
+            },
+            "advanced":function(){
+            // DOM MANIPULATION
+            $(".menu li a span").hide();
+            var html ='<h2>Now...</h2> <p>Sup received the order to consider you as an advanced user and hence started a new agent that accordingly reshaped the UI.</p><p>This aims to show two things:</p><ol><li>Sup can hotpatch itself in a various number of cases and works well with Ajax</li><li>Profiling can be beneficial to advanced users.</li></ol>';
+            var widget = $('<div id="advanced" class="widget"><div clas="content">'+html+'</div><div class="controls"><button name="close">Close</button></div></div>');
+            $("body:last-child").append(widget);
+            $("#advanced button[name=close]").on("click",function(){$("#advanced").remove()})
+
+            }
+        }
           
       }).run();
     })

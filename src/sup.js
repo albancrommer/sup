@@ -1,33 +1,34 @@
 (function (window, undefined) {
     "use strict";
+    /*jslint nomen: true, devel: true, window: true, maxerr: 500, continue: true, forin: true */
     var Sup;
     /**
     * The hopefully easy to setup, run everywhere user profiler.
-    * 
-    * <p>Sup aims to allow simple configuration in order to be reusable. 
+    *
+    * <p>Sup aims to allow simple configuration in order to be reusable.
     * It is technically a singleton object broken into multiple sub-objects:</p>
     * <ul>
     * <li>{@link Sup.Agents} are the autonomous elements you create to interact
     * with your users, you must declare them at configuration.</li>
-    * <li>{@link Sup.Controller} takes care of data both externally (loading/saving) 
+    * <li>{@link Sup.Controller} takes care of data both externally (loading/saving)
     * and internally (parsing/converting/distributing)</li>
-    * <li>{@link Sup.Dispatcher} acts as a middleman between the Controller and 
+    * <li>{@link Sup.Dispatcher} acts as a middleman between the Controller and
     * the Agents actually instancing the later ones in a Factory way.</li>
-    * <li>{@link Sup.Strategy} depends on you to be defined (State Machine, 
+    * <li>{@link Sup.Strategy} depends on you to be defined (State Machine,
     * Behaviour Tree, etc.) and set the agents to be dispatched.</li>
     * </ul>
     * <p>The system uses a request object -owned by {@link Sup.Controller}- that
     * contains the user profile. It is pulled and pushed as JSON data following
-    * read & write methods you must declare at configuration. 
+    * read & write methods you must declare at configuration.
     * </p>
-    *  
-    * @class the Simple User Profiler. Because users need help. 
+    * 
+    * @class the Simple User Profiler. Because users need help.
     */
     Sup = {};
 
-    /** 
-     * This is the principal method you'll use : it sets things up while keeping the internals away 
-     * @param params your configuration object 
+    /**
+     * This is the principal method you'll use : it sets things up while keeping the internals away
+     * @param params your configuration object
      * @param params.read A function you define to concretely access the user data/request object
      * @param params.write A function you define to store said data object
      * @param params.strategy A function you define to decide which agents to dispatch depending on context
@@ -37,11 +38,12 @@
     Sup.configure = function (params) {
         Sup.Controller.read = params.read || function () {};
         Sup.Controller.write = params.write || function () {};
-        if (params["strategy"]) { 
-            Sup.Strategy._fn = params["strategy"];
+        Sup.Controller.save(params.save || undefined);
+        if (params.strategy) {
+            Sup.Strategy._fn = params.strategy;
         }
-        if (params["agents"]) { 
-            Sup.Agents._list = params["agents"];
+        if (params.agents) {
+            Sup.Agents._list = params.agents;
         }
         return Sup;
     };
@@ -51,6 +53,7 @@
         Sup.Controller.load();
         Sup.Dispatcher._list = Sup.Strategy.run();
         Sup.Dispatcher.run();
+        return this;
     };
     /** When in doubt, use this method to have Sup return it's own debugging info
      * @usage in console : Sup.debug()
@@ -63,21 +66,20 @@
             }
         }
     };
-    
 
     // Agents
     Sup.Agents = { /** @lends Sup.Agents.prototype */
-            /** 
+            /**
             * The Agents object acts as a pool of potential objects you configure
             * @class Objects pool
-            * @name Sup.Agents 
+            * @name Sup.Agents
             **/
     };
     Sup.Agents._debug = function () {};
 
     /**
     * Provides a standard interface for all your agents
-    * @class Abstract 
+    * @class Abstract
     */
     Sup.Agents.Abstract = function (name) { /** @lends Sup.Agents.Abstract.prototype */
         // The name of your action
@@ -92,11 +94,15 @@
                 }
             }
         };
-        
-        /** Serializes your agent properties and pushes it to controller subscribing a save agent */ 
-        this.update = function (do_save) {
-            var i,serializable = {};
+        /** Serializes your agent properties and pushes it to controller subscribing a save agent
+         * @param dont_save if true, will not call {@link Sup.Controller#save}
+         **/
+        this.update = function (do_save, do_force) {
+            var i, serializable = {};
             for (i in this) {
+                if( !this.hasOwnProperty(i)){
+                    continue;
+                }
                 if ("function" === typeof (this[i])) {
                     continue;
                 }
@@ -105,11 +111,23 @@
                         continue;
                     }
                 }
-                serializable[i] = this [i];
+                serializable[i] = this[i];
             }
-            Sup.Controller.requestPart(this._name,serializable);
-            if (do_save) {
-                Sup.Controller.save();
+            Sup.Controller.requestPart(this._name, serializable);
+            if (undefined === do_save || false !== do_save) {
+                Sup.Controller.save(do_force);
+            }
+        };
+        /** Destroys the agent and the reference in dispatcher, eventually asking to restart strategy
+         * @param dont_update if False, doesn't refresh the app
+         **/
+        this.destroy = function (dont_refresh) {
+            var index;
+            delete Sup.Dispatcher._dispatched[this._name];
+            index = Sup.Dispatcher._list.indexOf (this._name);
+            Sup.Dispatcher._list.splice(index,1);
+            if (undefined === dont_refresh || true !== dont_refresh) {
+                Sup.run();
             }
         };
     };
@@ -117,13 +135,13 @@
 
     // Strategy
     Sup.Strategy = {
-            /** 
+            /**
             * Strategy offers you a way to deal freely with the logic
             * of the profiler, implementing any kind of decision algorithm
             * that will be called by {@link Sup.Controller} at runtime.
             * It returns the {@link Sup.Agents} instanced by {@link Sup.Dispatcher}
             * @class Strategy / Algorithmic decisional
-            * @name Sup.Strategy 
+            * @name Sup.Strategy
             **/
     };
     /** Method you configure that implements dispatcher "AI" */
@@ -137,22 +155,22 @@
     // Dispatcher
 
     Sup.Dispatcher = { /** @lends Sup.Dispatcher.prototype */
-            /** 
-            * Dispatcher is a mechanical part as it receives a list generated 
+            /**
+            * Dispatcher is a mechanical part as it receives a list generated
             * by {@link Sup.Strategy} to instance the {@link Sup.Agents}
-            * @class Multi agents handler / Factory  
-            * @name Sup.Dispatcher 
+            * @class Multi agents handler / Factory 
+            * @name Sup.Dispatcher
             **/
     };
     /** Factories your Agents and records them */
     Sup.Dispatcher.run = function () {
-        var i,ii,agent,key,value;
+        var i, ii, agent, key, value;
         this._dispatched = {};
-        for (i in this._list) {
+        for (i = 0; i < this._list.length; i++) {
             key = this._list[i];
             value = Sup.Agents._list[key];
-            if( undefined === value){
-                throw("Invalid object key");
+            if (undefined === value) {
+                throw ("Invalid object key");
             }
             agent = new Sup.Agents.Abstract(key);
             agent.init(Sup.Controller.request());
@@ -161,13 +179,13 @@
                 agent.run = Sup.Agents._list[this._list[i]];
             }
             // Object : contains multiple methods
-            if ("object" === typeof (configured)) {
-                for( ii in value){
+            if ("object" === typeof (value)) {
+                for (ii in value) {
                     agent[ii] = Sup.Agents._list[this._list[i]][ii];
                 }
             }
-            if( "function" !== typeof( agent.run) ){
-                throw "Agent "+this._list[i]+" missing run function.";
+            if ("function" !== typeof (agent.run)) {
+                throw "Agent " + this._list[i] + " missing run function.";
             }
             agent.init();
             agent.run();
@@ -175,18 +193,23 @@
         }
     };
 
-    Sup.Dispatcher._debug = function () {};
+    Sup.Dispatcher._debug = function () {
+        console.log( "dispatchable", this._list);
+        for (var i in this._dispatched){
+            console.log( "dispatched  ",i,this._dispatched[i]);
+        }
+    };
 
-    // Controller 
+    // Controller
     Sup.Controller = { /** @lends Sup.Controller.prototype */
-            /** 
-            * Contains the request object, loads and saves it for you. The 
-            * "request" is 
-            * @class IO Controller
-            * 
-            * @name Sup.Controller 
-            **/
-            "_request" : {}
+        /**
+        * Contains the request object, loads and saves it for you. The
+        * "request" is
+        * @class IO Controller
+        *
+        * @name Sup.Controller
+        **/
+        "_request" : {}
     };
 
     /** Loads your user data, parses it and sets it as the request */
@@ -201,8 +224,38 @@
     /** User rewritten function */
     Sup.Controller.write = function () {};
     /** Encodes the request and puts it where you asked it to */
-    Sup.Controller.save = function () {
-        Sup.Controller.write(Sup.Controller.request());
+    Sup.Controller.save = function (params) {
+        var type    = typeof (params);
+        switch (type) {
+        case "function":
+            // Return custom function
+            this.save = params;
+            break;
+        case "number":
+            // Checks time elapsed between saves
+            this.save = function (do_save) {
+                var last = Sup.Controller._last || 0,
+                    time = new Date().getTime(),
+                    lapse = time - last,
+                    that = Sup.Controller;
+                if (lapse > params || do_save) {
+                    that._call = false;
+                    that._last = time;
+                    that.write(Sup.Controller.request());
+                } else if (true !== Sup.Controller._call) {
+                    that._call = true;
+                    setTimeout(that.save, params - lapse);
+                }
+            };
+
+            break; 
+        default:
+            // Will save every time
+            this.save = function () {
+                Sup.Controller.write(Sup.Controller.request());
+            };
+            break;
+        }
     };
     /** Your basic getter for the request object */
     Sup.Controller.request = function () {
@@ -223,19 +276,19 @@
         var i, ii;
         if ("function" !== typeof (console.log)) {
             alert("No console available.");
+            return;
         }
-        console.log("request",this._request);
+        console.log("request", this._request);
         for (i in this._request.agents) {
-            console.log("  request agent: "+i);
+            console.log("  request agent: " + i);
             for (ii in this._request.agents[i]) {
                 if ("function" !== typeof (this._request.agents[i][ii])) {
-                    console.log("    "+ii+" ",this._request.agents[i][ii]);
+                    console.log("    " + ii + " ", this._request.agents[i][ii]);
                 }
             }
         }
-    }
-    
+    };
 
   window.Sup = Sup;
 
-})(window);
+}) (window);
